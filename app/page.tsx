@@ -389,6 +389,8 @@ function DevRequestContent() {
                   <tr className="bg-slate-50 border-b border-wedly-bd text-[11px] font-semibold text-wedly-t2">
                     <th className="px-3 py-2.5 w-[50px] text-center">NO</th>
                     <th className="px-3 py-2.5">제목</th>
+                    <th className="px-3 py-2.5 w-[100px] text-center">앱</th>
+                    <th className="px-3 py-2.5 w-[80px] text-center">페이지</th>
                     <th className="px-3 py-2.5 w-[72px] text-center">요청자</th>
                     <th className="px-3 py-2.5 w-[72px] text-center">우선순위</th>
                     <th className="px-3 py-2.5 w-[72px] text-center">상태</th>
@@ -412,6 +414,10 @@ function DevRequestContent() {
                               {r.title}
                             </div>
                           </td>
+                          <td className="px-3 py-2.5 text-[11px] text-center">
+                            {r.app && <span className="font-medium px-1.5 py-0.5 rounded bg-blue-50 text-blue-600">{r.app.replace("wedly-", "")}</span>}
+                          </td>
+                          <td className="px-3 py-2.5 text-[11px] text-wedly-t2 text-center">{r.page}</td>
                           <td className="px-3 py-2.5 text-[11px] text-wedly-t2 text-center">{r.requester}</td>
                           <td className="px-3 py-2.5 text-center">
                             <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${PRIORITY_COLORS[r.priority] || "bg-slate-100 text-slate-600"}`}>{r.priority}</span>
@@ -435,7 +441,7 @@ function DevRequestContent() {
                         </tr>
                         {isOpen && (
                           <tr>
-                            <td colSpan={7} className="p-0">
+                            <td colSpan={9} className="p-0">
                               <div className="bg-blue-50/40 border-b border-blue-200 px-5 py-4">
                                 <div className="flex items-center justify-between mb-3">
                                   <div className="flex items-center gap-2">
