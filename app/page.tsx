@@ -87,13 +87,17 @@ function DevRequestContent() {
 
   const fetchRequests = useCallback(async () => {
     try {
-      const url = paramApp ? `/api/dev-request?app=${encodeURIComponent(paramApp)}` : "/api/dev-request";
+      const params = new URLSearchParams();
+      if (paramApp) params.set("app", paramApp);
+      if (paramPage) params.set("page", paramPage);
+      const qs = params.toString();
+      const url = qs ? `/api/dev-request?${qs}` : "/api/dev-request";
       const res = await fetch(url);
       const json = await res.json();
       if (json.success) setRequests(json.data || []);
     } catch { /* ignore */ }
     finally { setLoading(false); }
-  }, [paramApp]);
+  }, [paramApp, paramPage]);
 
   useEffect(() => { fetchRequests(); }, [fetchRequests]);
 

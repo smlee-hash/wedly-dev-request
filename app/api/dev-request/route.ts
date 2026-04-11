@@ -12,17 +12,19 @@ export async function GET(req: Request) {
 
   const { searchParams } = new URL(req.url);
   const appFilter = searchParams.get("app");
+  const pageFilter = searchParams.get("page");
 
   try {
-    const filter: Record<string, unknown> = appFilter
-      ? { property: "앱", select: { equals: appFilter } }
-      : {};
+    const conditions: Record<string, unknown>[] = [];
+    if (appFilter) conditions.push({ property: "앱", select: { equals: appFilter } });
+    if (pageFilter) conditions.push({ property: "세부 페이지", rich_text: { equals: pageFilter } });
 
     const body: Record<string, unknown> = {
       sorts: [{ property: "요청일시", direction: "descending" }],
       page_size: 50,
     };
-    if (appFilter) body.filter = filter;
+    if (conditions.length === 1) body.filter = conditions[0];
+    else if (conditions.length > 1) body.filter = { and: conditions };
 
     const res = await fetch(`${NOTION_API}/databases/${DATABASE_ID}/query`, {
       method: "POST",
