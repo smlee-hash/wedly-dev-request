@@ -13,3 +13,12 @@ model DevRequestImage {
   mimeType  String
   createdAt DateTime @default(now())
 }
+
+model AppUpdate {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  category    String   @default("improve") // feature|fix|improve
+  page        String?  // 표시 대상 페이지 경로
+  createdAt   DateTime @default(now())
+}
