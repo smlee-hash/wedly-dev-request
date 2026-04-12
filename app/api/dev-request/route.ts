@@ -4,6 +4,47 @@ const NOTION_TOKEN = process.env.NOTION_TOKEN;
 const NOTION_API = "https://api.notion.com/v1";
 const DATABASE_ID = process.env.NOTION_DATABASE_ID || "93ae3ac1e9c64c879ec166ccc7fb1444";
 
+let categoryPropertyEnsured = false;
+
+async function ensureCategoryProperty() {
+  if (categoryPropertyEnsured) return;
+  try {
+    const res = await fetch(`${NOTION_API}/databases/${DATABASE_ID}`, {
+      headers: { Authorization: `Bearer ${NOTION_TOKEN}`, "Notion-Version": "2022-06-28" },
+    });
+    const db = await res.json();
+    if (db.properties?.["카테고리"]) {
+      categoryPropertyEnsured = true;
+      return;
+    }
+    await fetch(`${NOTION_API}/databases/${DATABASE_ID}`, {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${NOTION_TOKEN}`,
+        "Content-Type": "application/json",
+        "Notion-Version": "2022-06-28",
+      },
+      body: JSON.stringify({
+        properties: {
+          "카테고리": {
+            select: {
+              options: [
+                { name: "신규 기능", color: "blue" },
+                { name: "기능 개선", color: "yellow" },
+                { name: "버그 수정", color: "red" },
+                { name: "UI·UX", color: "pink" },
+                { name: "데이터", color: "green" },
+                { name: "기타", color: "gray" },
+              ],
+            },
+          },
+        },
+      }),
+    });
+    categoryPropertyEnsured = true;
+  } catch { /* ignore */ }
+}
+
 // GET: 요청 목록 조회 (?app=xxx 로 필터링)
 export async function GET(req: Request) {
   if (!NOTION_TOKEN) {
@@ -112,6 +153,8 @@ export async function POST(req: Request) {
   const baseUrl = `${url.protocol}//${url.host}`;
 
   try {
+    await ensureCategoryProperty();
+
     const queryRes = await fetch(`${NOTION_API}/databases/${DATABASE_ID}/query`, {
       method: "POST",
       headers: {
