@@ -94,29 +94,24 @@ export default function ChangelogPopup() {
 
   useEffect(() => {
     if (CHANGELOG.length === 0) return;
-    const lastSeenId = parseInt(localStorage.getItem(STORAGE_KEY) || "0", 10);
-    const unseen = CHANGELOG.filter((e) => e.id > lastSeenId);
-    if (unseen.length > 0) {
-      setNewEntries(unseen);
+    try {
+      const lastSeenId = parseInt(localStorage.getItem(STORAGE_KEY) || "0", 10);
+      const unseen = CHANGELOG.filter((e) => e.id > lastSeenId);
+      if (unseen.length > 0) {
+        setNewEntries(unseen);
+        setOpen(true);
+      }
+    } catch {
+      // iframe 크로스오리진 등 localStorage 접근 불가 시 전체 표시
+      setNewEntries(CHANGELOG);
       setOpen(true);
     }
   }, []);
 
-  const handleClose = async () => {
+  const handleClose = () => {
     const maxId = Math.max(...CHANGELOG.map((e) => e.id));
-    localStorage.setItem(STORAGE_KEY, String(maxId));
-    for (const key of Object.keys(localStorage)) {
-      if (key.includes("cache")) localStorage.removeItem(key);
-    }
-    try {
-      if ("caches" in window) {
-        const keys = await caches.keys();
-        await Promise.all(keys.map((k) => caches.delete(k)));
-      }
-    } catch { /* 캐시 삭제 실패해도 새로고침은 진행 */ }
-    const url = new URL(window.location.href);
-    url.searchParams.set("_r", String(Date.now()));
-    window.location.replace(url.toString());
+    try { localStorage.setItem(STORAGE_KEY, String(maxId)); } catch { /* iframe 환경 */ }
+    setOpen(false);
   };
 
   if (!open || newEntries.length === 0) return null;
