@@ -237,7 +237,7 @@ function DevRequestContent() {
 
   return (
     <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-      <UpdatePopup />
+      <UpdatePopup page={paramPage} />
       <div className="space-y-4">
         <div className="bg-white rounded-2xl border border-wedly-bd p-5 shadow-sm">
           <div className="flex items-center justify-between mb-4">

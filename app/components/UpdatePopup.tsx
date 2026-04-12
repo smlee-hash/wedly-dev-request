@@ -38,7 +38,7 @@ async function waitForNewBuild(currentBuildId: string | null, timeoutMs = 15000)
   return false;
 }
 
-export default function UpdatePopup() {
+export default function UpdatePopup({ page }: { page?: string }) {
   const [update, setUpdate] = useState<AppUpdate | null>(null);
   const [visible, setVisible] = useState(false);
   const [animating, setAnimating] = useState(false);
@@ -79,15 +79,16 @@ export default function UpdatePopup() {
     });
   }, []);
 
-  // 초기 로드: 최신 업데이트 확인
+  // 초기 로드: 현재 페이지에 해당하는 최신 업데이트 확인
   useEffect(() => {
-    fetch("/api/app-updates")
+    const qs = page ? `?page=${encodeURIComponent(page)}` : "";
+    fetch(`/api/app-updates${qs}`)
       .then((r) => r.json())
       .then((data) => {
         if (data?.id) showUpdate(data);
       })
       .catch(() => {});
-  }, [showUpdate]);
+  }, [showUpdate, page]);
 
   // SSE 연결: 실시간 업데이트 수신
   useEffect(() => {
@@ -98,7 +99,10 @@ export default function UpdatePopup() {
       try {
         const msg = JSON.parse(event.data);
         if (msg.type === "new-update" && msg.data) {
-          showUpdate(msg.data);
+          // 해당 페이지 전용 업데이트만 표시 (page=null이면 전체 대상)
+          if (!msg.data.page || msg.data.page === page) {
+            showUpdate(msg.data);
+          }
         }
       } catch { /* ignore */ }
     };
