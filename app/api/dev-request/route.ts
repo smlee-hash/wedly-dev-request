@@ -79,6 +79,7 @@ export async function GET(req: Request) {
           content: cleanContent,
           priority: (props["우선 순위"]?.select as { name: string })?.name || "",
           status: (props["진행상태"]?.status as { name: string })?.name || "",
+          category: (props["카테고리"]?.select as { name: string })?.name || "",
           app: (props["앱"]?.select as { name: string })?.name || "",
           page: (props["세부 페이지"]?.rich_text as Array<{ plain_text: string }>)?.[0]?.plain_text || "",
           no: props["NO"]?.number as number || 0,
@@ -100,7 +101,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: false, error: "NOTION_TOKEN 미설정" }, { status: 500 });
   }
 
-  const { title, content, priority, app, page, imageIds, requester } = await req.json();
+  const { title, content, priority, category, app, page, imageIds, requester } = await req.json();
 
   if (!title || !content) {
     return NextResponse.json({ success: false, error: "제목과 내용은 필수입니다" }, { status: 400 });
@@ -132,6 +133,7 @@ export async function POST(req: Request) {
     const properties: Record<string, unknown> = {
       "페이지": { title: [{ text: { content: title } }] },
       "우선 순위": { select: { name: priority || "보통" } },
+      "카테고리": { select: { name: category || "기타" } },
       "NO": { number: newNo },
       "요청자": { rich_text: [{ text: { content: requesterName || "알 수 없음" } }] },
     };
@@ -173,6 +175,48 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({ success: true, data: { id: data.id, no: newNo } });
+  } catch (err) {
+    return NextResponse.json({ success: false, error: String(err) }, { status: 500 });
+  }
+}
+
+// PATCH: 요청 필드 수정 (카테고리, 우선순위, 상태)
+export async function PATCH(req: Request) {
+  if (!NOTION_TOKEN) {
+    return NextResponse.json({ success: false, error: "NOTION_TOKEN 미설정" }, { status: 500 });
+  }
+
+  const { id, category, priority, status } = await req.json();
+  if (!id) {
+    return NextResponse.json({ success: false, error: "id는 필수입니다" }, { status: 400 });
+  }
+
+  const properties: Record<string, unknown> = {};
+  if (category !== undefined) properties["카테고리"] = { select: { name: category } };
+  if (priority !== undefined) properties["우선 순위"] = { select: { name: priority } };
+  if (status !== undefined) properties["진행상태"] = { status: { name: status } };
+
+  if (Object.keys(properties).length === 0) {
+    return NextResponse.json({ success: false, error: "수정할 필드가 없습니다" }, { status: 400 });
+  }
+
+  try {
+    const res = await fetch(`${NOTION_API}/pages/${id}`, {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${NOTION_TOKEN}`,
+        "Content-Type": "application/json",
+        "Notion-Version": "2022-06-28",
+      },
+      body: JSON.stringify({ properties }),
+    });
+
+    const data = await res.json();
+    if (data.object === "error") {
+      return NextResponse.json({ success: false, error: data.message }, { status: 400 });
+    }
+
+    return NextResponse.json({ success: true });
   } catch (err) {
     return NextResponse.json({ success: false, error: String(err) }, { status: 500 });
   }

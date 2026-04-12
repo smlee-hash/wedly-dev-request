@@ -10,6 +10,7 @@ type DevRequest = {
   content: string;
   priority: string;
   status: string;
+  category: string;
   app: string;
   page: string;
   no: number;
@@ -25,11 +26,24 @@ const PRIORITY_COLORS: Record<string, string> = {
 };
 
 const STATUS_BADGE: Record<string, string> = {
-  "\uC2DC\uC791 \uC804": "bg-slate-100 text-slate-600",
-  "\uB300\uAE30\uC911": "bg-slate-100 text-slate-600",
-  "\uC9C4\uD589 \uC911": "bg-blue-100 text-blue-700",
-  "\uC644\uB8CC": "bg-green-100 text-green-700",
+  "시작 전": "bg-slate-100 text-slate-600",
+  "대기중": "bg-slate-100 text-slate-600",
+  "진행 중": "bg-blue-100 text-blue-700",
+  "완료": "bg-green-100 text-green-700",
 };
+
+const CATEGORY_COLORS: Record<string, string> = {
+  "신규 기능": "bg-indigo-100 text-indigo-700",
+  "기능 개선": "bg-amber-100 text-amber-700",
+  "버그 수정": "bg-red-100 text-red-700",
+  "UI·UX": "bg-pink-100 text-pink-700",
+  "데이터": "bg-teal-100 text-teal-700",
+  "기타": "bg-slate-100 text-slate-600",
+};
+
+const CATEGORY_OPTIONS = ["신규 기능", "기능 개선", "버그 수정", "UI·UX", "데이터", "기타"];
+const PRIORITY_OPTIONS = ["최우선", "높음", "보통", "낮음"];
+const STATUS_OPTIONS = ["시작 전", "대기중", "진행 중", "완료"];
 
 type FormStep = "input" | "structuring" | "review";
 
@@ -50,7 +64,8 @@ function DevRequestContent() {
   const [rawContent, setRawContent] = useState("");
   const [structuredTitle, setStructuredTitle] = useState("");
   const [structuredContent, setStructuredContent] = useState("");
-  const [priority, setPriority] = useState("\uBCF4\uD1B5");
+  const [priority, setPriority] = useState("보통");
+  const [category, setCategory] = useState("기타");
   const [submitting, setSubmitting] = useState(false);
   const [submitResult, setSubmitResult] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -120,7 +135,8 @@ function DevRequestContent() {
       if (json.success) {
         setStructuredTitle(json.data.title);
         setStructuredContent(json.data.content);
-        setPriority(json.data.priority || "\uBCF4\uD1B5");
+        setPriority(json.data.priority || "보통");
+        setCategory(json.data.category || "기타");
         setStep("review");
       } else {
         setStep("input");
@@ -155,6 +171,7 @@ function DevRequestContent() {
           title: structuredTitle,
           content: structuredContent,
           priority,
+          category,
           app: paramApp || "general",
           page: paramPage || "",
           imageIds,
@@ -164,7 +181,7 @@ function DevRequestContent() {
       const json = await res.json();
       if (json.success) {
         setSubmitResult("\uB4F1\uB85D \uC644\uB8CC");
-        setRawContent(""); setStructuredTitle(""); setStructuredContent(""); setPriority("\uBCF4\uD1B5");
+        setRawContent(""); setStructuredTitle(""); setStructuredContent(""); setPriority("보통"); setCategory("기타");
         attachedFiles.forEach((f) => URL.revokeObjectURL(f.preview));
         setAttachedFiles([]);
         setStep("input");
@@ -196,9 +213,23 @@ function DevRequestContent() {
   const resetForm = () => {
     setShowForm(false);
     setStep("input");
-    setRawContent(""); setStructuredTitle(""); setStructuredContent(""); setPriority("\uBCF4\uD1B5");
+    setRawContent(""); setStructuredTitle(""); setStructuredContent(""); setPriority("보통"); setCategory("기타");
     attachedFiles.forEach((f) => URL.revokeObjectURL(f.preview));
     setAttachedFiles([]);
+  };
+
+  const handleUpdate = async (id: string, field: string, value: string) => {
+    try {
+      const res = await fetch("/api/dev-request", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, [field]: value }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        setRequests((prev) => prev.map((r) => r.id === id ? { ...r, [field]: value } : r));
+      }
+    } catch { /* ignore */ }
   };
 
   const appLabel = paramApp || "general";
@@ -211,9 +242,9 @@ function DevRequestContent() {
             <div>
               <h3 className="text-[14px] font-bold text-wedly-navy flex items-center gap-2">
                 <svg className="w-4 h-4 text-wedly-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                오류/개선 요청
+                기능 추가 및 개선 요청
               </h3>
-              <p className="text-[12px] text-wedly-muted mt-0.5">오류나 개선사항을 요청합니다</p>
+              <p className="text-[12px] text-wedly-muted mt-0.5">기능 추가나 개선사항을 요청합니다</p>
             </div>
             <button onClick={() => setShowForm(!showForm)} className="flex items-center gap-1.5 px-3 py-2 text-[13px] font-medium text-white bg-wedly-accent rounded-lg hover:bg-wedly-accent/90 transition-colors">
               <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>
@@ -250,7 +281,7 @@ function DevRequestContent() {
                     {paramRequester && <span className="text-[11px] text-wedly-muted ml-auto">요청자: {paramRequester}</span>}
                   </div>
                   <div>
-                    <label className="text-[12px] font-medium text-wedly-t2 mb-1 block">오류/개선 내용</label>
+                    <label className="text-[12px] font-medium text-wedly-t2 mb-1 block">요청 내용</label>
                     <textarea
                       value={rawContent}
                       onChange={(e) => setRawContent(e.target.value)}
@@ -269,7 +300,7 @@ function DevRequestContent() {
                           addFiles(imageFiles);
                         }
                       }}
-                      placeholder="어떤 오류가 발생했는지, 어떤 개선이 필요한지 편하게 작성해주세요. 이미지를 드래그하거나 클립보드에서 붙여넣기(Ctrl+V)할 수 있습니다."
+                      placeholder="추가하고 싶은 기능이나 개선사항을 편하게 작성해주세요. 이미지를 드래그하거나 클립보드에서 붙여넣기(Ctrl+V)할 수 있습니다."
                       rows={5}
                       className={`w-full px-3 py-2 text-[13px] border rounded-lg resize-none focus:outline-none focus:border-wedly-accent transition-colors ${dragging ? "border-wedly-accent bg-bg-blue/10" : "border-wedly-bd"}`}
                     />
@@ -338,18 +369,34 @@ function DevRequestContent() {
                     </div>
                   </div>
 
-                  <div>
-                    <label className="text-[12px] font-medium text-wedly-t2 mb-1.5 block">우선 순위</label>
-                    <div className="flex gap-2">
-                      {["\uCD5C\uC6B0\uC120", "\uB192\uC74C", "\uBCF4\uD1B5", "\uB0AE\uC74C"].map((p) => (
-                        <button
-                          key={p}
-                          onClick={() => setPriority(p)}
-                          className={`px-3 py-1.5 text-[12px] font-medium rounded-lg border transition-colors ${priority === p ? PRIORITY_COLORS[p] + " border-current" : "text-wedly-t2 border-wedly-bd hover:bg-bg-gray"}`}
-                        >
-                          {p}
-                        </button>
-                      ))}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-[12px] font-medium text-wedly-t2 mb-1.5 block">카테고리 <span className="text-[10px] text-wedly-muted font-normal">(AI 자동 분류)</span></label>
+                      <div className="flex flex-wrap gap-2">
+                        {CATEGORY_OPTIONS.map((c) => (
+                          <button
+                            key={c}
+                            onClick={() => setCategory(c)}
+                            className={`px-3 py-1.5 text-[12px] font-medium rounded-lg border transition-colors ${category === c ? CATEGORY_COLORS[c] + " border-current" : "text-wedly-t2 border-wedly-bd hover:bg-bg-gray"}`}
+                          >
+                            {c}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-[12px] font-medium text-wedly-t2 mb-1.5 block">우선 순위</label>
+                      <div className="flex gap-2">
+                        {PRIORITY_OPTIONS.map((p) => (
+                          <button
+                            key={p}
+                            onClick={() => setPriority(p)}
+                            className={`px-3 py-1.5 text-[12px] font-medium rounded-lg border transition-colors ${priority === p ? PRIORITY_COLORS[p] + " border-current" : "text-wedly-t2 border-wedly-bd hover:bg-bg-gray"}`}
+                          >
+                            {p}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   </div>
                   {attachedFiles.length > 0 && (
@@ -389,12 +436,12 @@ function DevRequestContent() {
                   <tr className="bg-slate-50 border-b border-wedly-bd text-[11px] font-semibold text-wedly-t2">
                     <th className="px-3 py-2.5 w-[50px] text-center">NO</th>
                     <th className="px-3 py-2.5">제목</th>
-                    <th className="px-3 py-2.5 w-[100px] text-center">앱</th>
-                    <th className="px-3 py-2.5 w-[80px] text-center">페이지</th>
+                    <th className="px-3 py-2.5 w-[80px] text-center">앱</th>
                     <th className="px-3 py-2.5 w-[72px] text-center">요청자</th>
+                    <th className="px-3 py-2.5 w-[80px] text-center">카테고리</th>
                     <th className="px-3 py-2.5 w-[72px] text-center">우선순위</th>
                     <th className="px-3 py-2.5 w-[72px] text-center">상태</th>
-                    <th className="px-3 py-2.5 w-[90px] text-center">요청일</th>
+                    <th className="px-3 py-2.5 w-[80px] text-center">요청일</th>
                     <th className="px-3 py-2.5 w-[44px]"></th>
                   </tr>
                 </thead>
@@ -417,13 +464,15 @@ function DevRequestContent() {
                           <td className="px-3 py-2.5 text-[11px] text-center">
                             {r.app && <span className="font-medium px-1.5 py-0.5 rounded bg-blue-50 text-blue-600">{r.app.replace("wedly-", "")}</span>}
                           </td>
-                          <td className="px-3 py-2.5 text-[11px] text-wedly-t2 text-center">{r.page}</td>
                           <td className="px-3 py-2.5 text-[11px] text-wedly-t2 text-center">{r.requester}</td>
                           <td className="px-3 py-2.5 text-center">
-                            <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${PRIORITY_COLORS[r.priority] || "bg-slate-100 text-slate-600"}`}>{r.priority}</span>
+                            <InlineSelect value={r.category} options={CATEGORY_OPTIONS} colors={CATEGORY_COLORS} onChange={(v) => handleUpdate(r.id, "category", v)} />
                           </td>
                           <td className="px-3 py-2.5 text-center">
-                            <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${STATUS_BADGE[r.status] || "bg-slate-100 text-slate-600"}`}>{r.status}</span>
+                            <InlineSelect value={r.priority} options={PRIORITY_OPTIONS} colors={PRIORITY_COLORS} onChange={(v) => handleUpdate(r.id, "priority", v)} />
+                          </td>
+                          <td className="px-3 py-2.5 text-center">
+                            <InlineSelect value={r.status} options={STATUS_OPTIONS} colors={STATUS_BADGE} onChange={(v) => handleUpdate(r.id, "status", v)} />
                           </td>
                           <td className="px-3 py-2.5 text-[11px] text-wedly-muted text-center">{new Date(r.createdTime).toLocaleDateString("ko-KR")}</td>
                           <td className="px-3 py-2.5 text-center">
@@ -445,6 +494,7 @@ function DevRequestContent() {
                               <div className="bg-blue-50/40 border-b border-blue-200 px-5 py-4">
                                 <div className="flex items-center justify-between mb-3">
                                   <div className="flex items-center gap-2">
+                                    {r.category && <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${CATEGORY_COLORS[r.category] || "bg-slate-100 text-slate-600"}`}>{r.category}</span>}
                                     <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${PRIORITY_COLORS[r.priority] || "bg-slate-100 text-slate-600"}`}>{r.priority}</span>
                                     <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${STATUS_BADGE[r.status] || "bg-slate-100 text-slate-600"}`}>{r.status}</span>
                                     <span className="text-[11px] text-wedly-muted">{r.requester} · {new Date(r.createdTime).toLocaleDateString("ko-KR")}</span>
@@ -489,6 +539,47 @@ function DevRequestContent() {
         </div>
       </div>
     </main>
+  );
+}
+
+function InlineSelect({ value, options, colors, onChange }: {
+  value: string; options: string[]; colors: Record<string, string>; onChange: (v: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  return (
+    <div ref={ref} className="relative inline-block">
+      <button
+        onClick={(e) => { e.stopPropagation(); setOpen(!open); }}
+        className={`text-[10px] font-medium px-1.5 py-0.5 rounded cursor-pointer hover:ring-1 hover:ring-slate-300 transition-all ${colors[value] || "bg-slate-100 text-slate-600"}`}
+      >
+        {value || "—"}
+      </button>
+      {open && (
+        <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 z-50 bg-white border border-slate-200 rounded-lg shadow-lg py-1 min-w-[120px]">
+          {options.map((opt) => (
+            <button
+              key={opt}
+              onClick={(e) => { e.stopPropagation(); onChange(opt); setOpen(false); }}
+              className={`w-full text-left px-3 py-1.5 text-[11px] hover:bg-slate-50 transition-colors flex items-center gap-2 ${value === opt ? "font-semibold" : ""}`}
+            >
+              <span className={`inline-block w-2 h-2 rounded-full ${(colors[opt] || "bg-slate-100").split(" ")[0]}`} />
+              {opt}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 

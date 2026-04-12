@@ -25,9 +25,18 @@ export async function POST(req: Request) {
 {
   "title": "제목 (~기능 요청 / ~개선 요청 / ~버그 수정 / ~기능 추가 중 하나로 끝낼 것)",
   "content": "구조화된 요청서 본문",
-  "priority": "우선순위 (최우선/높음/보통/낮음 중 하나)"
+  "priority": "우선순위 (최우선/높음/보통/낮음 중 하나)",
+  "category": "카테고리 (신규 기능/기능 개선/버그 수정/UI·UX/데이터/기타 중 하나)"
 }
 \`\`\`
+
+**카테고리 판단 기준:**
+- 신규 기능: 기존에 없던 완전히 새로운 기능 요청
+- 기능 개선: 기존 기능의 동작 방식 변경, 성능 개선, 편의성 향상
+- 버그 수정: 오류, 장애, 의도치 않은 동작 수정
+- UI·UX: 디자인 변경, 레이아웃 조정, 사용성 개선 (기능 변경 없음)
+- 데이터: 데이터 조회/수정/마이그레이션 관련
+- 기타: 위 분류에 해당하지 않는 요청
 
 **요청서 본문 작성 규칙:**
 1. 첫 줄: ***제목*** (굵게+기울임)
@@ -80,6 +89,7 @@ export async function POST(req: Request) {
         title: parsed.title || "개발 요청",
         content: parsed.content || raw,
         priority: parsed.priority || "보통",
+        category: (parsed as { category?: string }).category || "기타",
       },
     });
   } catch (err: unknown) {
