@@ -55,6 +55,7 @@ function DevRequestContent() {
   const paramApp = searchParams.get("app") || "";
   const paramRequester = searchParams.get("requester") || "";
   const paramPage = searchParams.get("page") || "";
+  const paramSourceUrl = searchParams.get("sourceUrl") || "";
 
   const [requests, setRequests] = useState<DevRequest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -177,6 +178,7 @@ function DevRequestContent() {
           page: paramPage || "",
           imageIds,
           requester: paramRequester || "",
+          sourceUrl: paramSourceUrl || "",
         }),
       });
       const json = await res.json();
