@@ -17,19 +17,22 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: `최대 ${MAX_FILES}개까지 첨부 가능합니다` }, { status: 400 });
     }
 
+    const ALLOWED_TYPES = ["image/", "application/pdf", "application/vnd.openxmlformats-officedocument", "application/vnd.ms-", "application/msword", "application/haansofthwp", "application/x-hwp"];
+    const isAllowed = (t: string) => ALLOWED_TYPES.some((a) => t.startsWith(a));
+
     const results = [];
     for (const file of files) {
-      if (!file.type.startsWith("image/")) continue;
+      if (!isAllowed(file.type)) continue;
       if (file.size > MAX_SIZE) continue;
 
       const buffer = Buffer.from(await file.arrayBuffer());
       const base64 = buffer.toString("base64");
 
-      const image = await prisma.devRequestImage.create({
+      const record = await prisma.devRequestImage.create({
         data: { data: base64, mimeType: file.type },
       });
 
-      results.push({ id: image.id });
+      results.push({ id: record.id, name: file.name, mimeType: file.type });
     }
 
     return NextResponse.json({ success: true, data: results });

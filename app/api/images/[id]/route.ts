@@ -16,12 +16,15 @@ export async function GET(
 
     const buffer = Buffer.from(image.data, "base64");
 
-    return new NextResponse(buffer, {
-      headers: {
-        "Content-Type": image.mimeType,
-        "Cache-Control": "public, max-age=31536000, immutable",
-      },
-    });
+    const headers: Record<string, string> = {
+      "Content-Type": image.mimeType,
+      "Cache-Control": "public, max-age=31536000, immutable",
+    };
+    if (!image.mimeType.startsWith("image/")) {
+      headers["Content-Disposition"] = `attachment; filename="${image.id}"`;
+    }
+
+    return new NextResponse(buffer, { headers });
   } catch {
     return new NextResponse("Error", { status: 500 });
   }

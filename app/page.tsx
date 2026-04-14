@@ -75,12 +75,15 @@ function DevRequestContent() {
   const [dragging, setDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const ALLOWED_TYPES = ["image/", "application/pdf", "application/vnd.openxmlformats-officedocument", "application/vnd.ms-", "application/msword", "application/haansofthwp", "application/x-hwp"];
+  const isAllowedFile = (f: File) => ALLOWED_TYPES.some((t) => f.type.startsWith(t)) || /\.(docx?|xlsx?|pdf|hwp|pptx?)$/i.test(f.name);
+
   const addFiles = useCallback((files: FileList | File[]) => {
     const newFiles = Array.from(files)
-      .filter((f) => f.type.startsWith("image/"))
+      .filter((f) => isAllowedFile(f))
       .slice(0, 5);
     setAttachedFiles((prev) => {
-      const combined = [...prev, ...newFiles.map((file) => ({ file, preview: URL.createObjectURL(file) }))];
+      const combined = [...prev, ...newFiles.map((file) => ({ file, preview: file.type.startsWith("image/") ? URL.createObjectURL(file) : "" }))];
       return combined.slice(0, 5);
     });
   }, []);
@@ -92,14 +95,14 @@ function DevRequestContent() {
     });
   }, []);
 
-  const uploadImages = async (): Promise<string[]> => {
+  const uploadFiles = async (): Promise<{ id: string; name: string; mimeType: string }[]> => {
     if (attachedFiles.length === 0) return [];
     const formData = new FormData();
     for (const { file } of attachedFiles) formData.append("images", file);
     const res = await fetch("/api/dev-request/upload", { method: "POST", body: formData });
     const json = await res.json();
     if (!json.success) throw new Error(json.error);
-    return json.data.map((d: { id: string }) => d.id);
+    return json.data;
   };
 
   const fetchRequests = useCallback(async () => {
@@ -156,12 +159,12 @@ function DevRequestContent() {
     setSubmitting(true);
     setSubmitResult(null);
     try {
-      let imageIds: string[] = [];
+      let uploadedFiles: { id: string; name: string; mimeType: string }[] = [];
       if (attachedFiles.length > 0) {
         try {
-          imageIds = await uploadImages();
+          uploadedFiles = await uploadFiles();
         } catch {
-          setSubmitResult("\uC774\uBBF8\uC9C0 \uC5C5\uB85C\uB4DC\uC5D0 \uC2E4\uD328\uD588\uC2B5\uB2C8\uB2E4. \uC774\uBBF8\uC9C0 \uC5C6\uC774 \uB4F1\uB85D\uD558\uB824\uBA74 \uCCA8\uBD80\uB97C \uC81C\uAC70 \uD6C4 \uB2E4\uC2DC \uC2DC\uB3C4\uD574\uC8FC\uC138\uC694.");
+          setSubmitResult("파일 업로드에 실패했습니다. 첨부를 제거 후 다시 시도해주세요.");
           setSubmitting(false);
           return;
         }
@@ -176,7 +179,8 @@ function DevRequestContent() {
           category,
           app: paramApp || "general",
           page: paramPage || "",
-          imageIds,
+          imageIds: uploadedFiles.filter((f) => f.mimeType.startsWith("image/")).map((f) => f.id),
+          fileIds: uploadedFiles.filter((f) => !f.mimeType.startsWith("image/")).map((f) => ({ id: f.id, name: f.name })),
           requester: paramRequester || "",
           sourceUrl: paramSourceUrl || "",
         }),
@@ -311,19 +315,28 @@ function DevRequestContent() {
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={(e) => { if (e.target.files) addFiles(e.target.files); e.target.value = ""; }} />
+                    <input ref={fileInputRef} type="file" accept="image/*,.doc,.docx,.pdf,.xls,.xlsx,.hwp,.pptx" multiple className="hidden" onChange={(e) => { if (e.target.files) addFiles(e.target.files); e.target.value = ""; }} />
                     <button type="button" onClick={() => fileInputRef.current?.click()} className="flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-medium text-wedly-t2 border border-wedly-bd rounded-lg hover:bg-bg-gray transition-colors">
-                      <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="m21 15-5-5L5 21" /></svg>
-                      이미지 첨부
+                      <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" /></svg>
+                      파일 첨부
                     </button>
-                    <span className="text-[11px] text-wedly-muted">드래그 또는 Ctrl+V로 붙여넣기 가능 (최대 5MB)</span>
+                    <span className="text-[11px] text-wedly-muted">이미지·문서(docx, pdf, xlsx, hwp) 첨부 가능 (최대 5MB)</span>
                   </div>
 
                   {attachedFiles.length > 0 && (
                     <div className="flex flex-wrap gap-2">
                       {attachedFiles.map((af, i) => (
-                        <div key={i} className="relative group w-20 h-20 rounded-lg overflow-hidden border border-wedly-bd/50">
-                          <img src={af.preview} alt="" className="w-full h-full object-cover" />
+                        <div key={i} className="relative group rounded-lg overflow-hidden border border-wedly-bd/50">
+                          {af.preview ? (
+                            <div className="w-20 h-20">
+                              <img src={af.preview} alt="" className="w-full h-full object-cover" />
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-bg-gray">
+                              <svg className="w-4 h-4 text-wedly-muted flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
+                              <span className="text-[11px] text-wedly-t2 max-w-[120px] truncate">{af.file.name}</span>
+                            </div>
+                          )}
                           <button onClick={() => removeFile(i)} className="absolute top-0.5 right-0.5 w-5 h-5 bg-black/60 text-white rounded-full flex items-center justify-center text-[10px] opacity-0 group-hover:opacity-100 transition-opacity">&#10005;</button>
                         </div>
                       ))}

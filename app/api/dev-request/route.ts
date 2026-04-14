@@ -148,7 +148,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: false, error: "NOTION_TOKEN 미설정" }, { status: 500 });
   }
 
-  const { title, content, priority, category, app, page, imageIds, requester, sourceUrl } = await req.json();
+  const { title, content, priority, category, app, page, imageIds, fileIds, requester, sourceUrl } = await req.json();
 
   if (!title || !content) {
     return NextResponse.json({ success: false, error: "제목과 내용은 필수입니다" }, { status: 400 });
@@ -198,13 +198,34 @@ export async function POST(req: Request) {
       },
     }));
 
-    if (imageIds && Array.isArray(imageIds) && imageIds.length > 0) {
+    const hasImages = imageIds && Array.isArray(imageIds) && imageIds.length > 0;
+    const hasFiles = fileIds && Array.isArray(fileIds) && fileIds.length > 0;
+
+    if (hasImages || hasFiles) {
       children.push({ object: "block", type: "divider", divider: {} });
+    }
+
+    if (hasImages) {
       for (const id of imageIds) {
         children.push({
           object: "block",
           type: "image",
           image: { type: "external", external: { url: `${baseUrl}/api/images/${id}` } },
+        });
+      }
+    }
+
+    if (hasFiles) {
+      for (const f of fileIds as { id: string; name: string }[]) {
+        children.push({
+          object: "block",
+          type: "paragraph",
+          paragraph: {
+            rich_text: [{
+              type: "text",
+              text: { content: `📎 ${f.name}`, link: { url: `${baseUrl}/api/images/${f.id}` } },
+            }],
+          },
         });
       }
     }
