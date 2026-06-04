@@ -91,7 +91,18 @@ export default function UpdatePopup({ page }: { page?: string }) {
   }, [showUpdate, page]);
 
   // SSE 연결: 실시간 업데이트 수신
+  // ⚠️ iframe(임베드)에서는 비활성화한다. cross-origin iframe 안에서 지속 연결(SSE)이
+  // 일부 브라우저(예: Comet)에서 재연결 폭주/렌더러 충돌("깨진 컵" 빈 화면)을 일으킬 수
+  // 있다. 임베드 시에도 위의 초기 1회 fetch(/api/app-updates)로 최신 업데이트 확인은 유지.
   useEffect(() => {
+    let isEmbedded = false;
+    try {
+      isEmbedded = window.self !== window.top;
+    } catch {
+      isEmbedded = true; // cross-origin 이라 top 접근이 막히면 임베드로 간주
+    }
+    if (isEmbedded) return;
+
     const es = new EventSource("/api/app-updates/stream");
     eventSourceRef.current = es;
 
