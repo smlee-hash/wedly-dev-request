@@ -14,6 +14,18 @@ const nextConfig = {
           { key: "Content-Security-Policy", value: "frame-ancestors *" },
         ],
       },
+      {
+        // ⚠️ 끼워넣기 대상 HTML 은 캐시하지 않는다.
+        // 이 페이지는 기본적으로 cache-control: s-maxage=31536000(1년) 으로
+        // 캐시되는데, 그러면 과거의 잘못된 헤더(예: X-Frame-Options: ALLOWALL)가
+        // 엣지/브라우저 캐시에 1년간 살아남아, 일부 브라우저(Comet 등)가 옛 응답을
+        // 꺼내 보며 iframe 을 계속 차단한다("이 콘텐츠는 차단되어 있습니다").
+        // no-store 로 항상 최신 헤더를 받게 한다. (정적 자원 /_next/* 는 제외)
+        source: "/",
+        headers: [
+          { key: "Cache-Control", value: "no-store, must-revalidate" },
+        ],
+      },
     ];
   },
 };
