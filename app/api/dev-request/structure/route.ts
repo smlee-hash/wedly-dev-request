@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 
+// 마크다운 강조 별표(**, ***) 제거 — 단일 *는 보존(예: "3 * 4")
+function stripBoldMarkers(s: string): string {
+  return s.replace(/\*{2,}/g, "");
+}
+
 // POST: 사용자 입력을 개발 요청서 형태로 구조화
 export async function POST(req: Request) {
   const apiKey = process.env.ANTHROPIC_API_KEY;
@@ -39,14 +44,14 @@ export async function POST(req: Request) {
 - 기타: 위 분류에 해당하지 않는 요청
 
 **요청서 본문 작성 규칙:**
-1. 첫 줄: ***제목*** (굵게+기울임)
-2. 다음 줄: **목적**: 이 기능이 필요한 이유 1문장
-3. 번호 리스트로 변경 포인트 정리 (하위 항목은 - 불릿)
+1. 제목은 title 필드에만 넣는다. 본문 첫 줄에 제목을 반복하지 않는다.
+2. 첫 줄: 목적: 이 기능이 필요한 이유 한 문장
+3. 번호 리스트(1. 2. 3.)로 핵심 변경 포인트만 정리 (하위 항목이 꼭 필요할 때만 - 불릿 한 단계)
 4. 개발자 관점: "내가 불편해요" → "시스템이 어떻게 동작해야 하는지"
 5. 주어는 시스템: "[필드명] 미갱신", "[버튼] 클릭 시 ~" 패턴
-6. 극도로 간결하게 — 개발자가 30초 안에 파악 가능한 최소 정보만
+6. 핵심 전달에 필요한 내용만. 부연 설명·수식어·미사여구·배경 설명 금지. 한 항목은 한 줄
 7. 모호한 표현 제거, 구체적 필드명·화면명 사용
-8. 표(테이블) 사용 금지, 불릿 리스트만 사용
+8. 마크다운 강조 기호(*, **, ***, #, 백틱)와 표(테이블) 사용 절대 금지. 순수 평문으로만 작성
 
 **우선순위 판단 기준:**
 - 최우선: 서비스 장애, 데이터 손실, 보안 이슈
@@ -86,8 +91,8 @@ export async function POST(req: Request) {
     return NextResponse.json({
       success: true,
       data: {
-        title: parsed.title || "개발 요청",
-        content: parsed.content || raw,
+        title: stripBoldMarkers(parsed.title || "개발 요청"),
+        content: stripBoldMarkers(parsed.content || raw),
         priority: parsed.priority || "보통",
         category: (parsed as { category?: string }).category || "기타",
       },

@@ -153,6 +153,19 @@ function DevRequestContent() {
     }
   };
 
+  // STEP 1→3: AI 없이 바로 확인 화면으로 (제목은 입력 첫 줄에서 자동 제안)
+  const handleDirectRegister = () => {
+    if (!rawContent.trim()) return;
+    const firstLine =
+      rawContent.split("\n").map((l) => l.trim()).find((l) => l.length > 0) || "";
+    setStructuredTitle(firstLine.slice(0, 60));
+    setStructuredContent(rawContent.trim());
+    setPriority("보통");
+    setCategory("기타");
+    setSubmitResult(null);
+    setStep("review");
+  };
+
   // STEP 3: 확인 후 등록
   const handleSubmit = async () => {
     if (submitting) return;
@@ -343,9 +356,12 @@ function DevRequestContent() {
                     </div>
                   )}
 
-                  <div className="flex gap-2 pt-1">
+                  <div className="flex flex-wrap gap-2 pt-1">
                     <button onClick={handleStructure} disabled={!rawContent.trim()} className="px-4 py-2 text-[13px] font-medium text-white bg-wedly-accent rounded-lg hover:bg-wedly-accent/90 disabled:opacity-50 transition-all">
-                      요청서 생성
+                      AI 구조화 후 등록
+                    </button>
+                    <button onClick={handleDirectRegister} disabled={!rawContent.trim()} className="px-4 py-2 text-[13px] font-medium text-wedly-accent border border-wedly-accent rounded-lg hover:bg-bg-blue disabled:opacity-50 transition-all">
+                      바로 등록
                     </button>
                     <button onClick={resetForm} className="px-4 py-2 text-[13px] text-wedly-muted border border-wedly-bd rounded-lg">취소</button>
                   </div>
@@ -369,6 +385,17 @@ function DevRequestContent() {
                   </div>
                   <p className="text-[11px] text-wedly-muted mb-2">{appLabel}{paramPage ? ` \u00b7 ${paramPage}` : ""}</p>
 
+                  <div className="mb-1">
+                    <label className="text-[12px] font-medium text-wedly-t2 mb-1 block">제목</label>
+                    <input
+                      type="text"
+                      value={structuredTitle}
+                      onChange={(e) => setStructuredTitle(e.target.value)}
+                      placeholder="요청 제목을 입력하세요"
+                      className="w-full px-3 py-2 text-[13px] border border-wedly-bd rounded-lg focus:outline-none focus:border-wedly-accent transition-colors"
+                    />
+                  </div>
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div className="bg-blue-50/60 rounded-lg border border-blue-200 p-4 min-h-[320px]">
                       <div className="flex items-center gap-1.5 mb-2">
@@ -388,7 +415,7 @@ function DevRequestContent() {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div>
-                      <label className="text-[12px] font-medium text-wedly-t2 mb-1.5 block">카테고리 <span className="text-[10px] text-wedly-muted font-normal">(AI 자동 분류)</span></label>
+                      <label className="text-[12px] font-medium text-wedly-t2 mb-1.5 block">카테고리</label>
                       <div className="flex flex-wrap gap-2">
                         {CATEGORY_OPTIONS.map((c) => (
                           <button
@@ -429,7 +456,7 @@ function DevRequestContent() {
                     </div>
                   )}
                   <div className="flex gap-2 pt-1">
-                    <button onClick={handleSubmit} disabled={submitting} className="px-4 py-2 text-[13px] font-medium text-white bg-wedly-accent rounded-lg hover:bg-wedly-accent/90 disabled:opacity-50 transition-all">
+                    <button onClick={handleSubmit} disabled={submitting || !structuredTitle.trim()} className="px-4 py-2 text-[13px] font-medium text-white bg-wedly-accent rounded-lg hover:bg-wedly-accent/90 disabled:opacity-50 transition-all">
                       {submitting ? "등록 중..." : "노션에 등록"}
                     </button>
                     <button onClick={() => setStep("input")} className="px-4 py-2 text-[13px] text-wedly-muted border border-wedly-bd rounded-lg">다시 작성</button>
