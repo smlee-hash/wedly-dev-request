@@ -129,7 +129,7 @@ export async function POST(req: Request) {
     const isConnIssue =
       e?.name === "APIConnectionTimeoutError" ||
       e?.name === "APIConnectionError" ||
-      /timeout|timed out|fetch failed|ECONN|network/i.test(e?.message || "");
+      /timeout|timed out|fetch failed|ECONN|network|connection/i.test(e?.message || "");
     if (isConnIssue) {
       return NextResponse.json({ success: false, error: "AI 응답이 지연되어 실패했습니다. 잠시 후 다시 시도해주세요." }, { status: 504 });
     }
