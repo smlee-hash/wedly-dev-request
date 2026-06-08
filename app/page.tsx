@@ -20,26 +20,26 @@ type DevRequest = {
 };
 
 const PRIORITY_COLORS: Record<string, string> = {
-  "\uCD5C\uC6B0\uC120": "bg-purple-100 text-purple-700",
-  "\uB192\uC74C": "bg-red-100 text-red-700",
-  "\uBCF4\uD1B5": "bg-yellow-100 text-yellow-700",
-  "\uB0AE\uC74C": "bg-green-100 text-green-700",
+  "\uCD5C\uC6B0\uC120": "bg-bg-purple text-wedly-purple",
+  "\uB192\uC74C": "bg-bg-red text-wedly-red",
+  "\uBCF4\uD1B5": "bg-bg-yellow text-wedly-gold",
+  "\uB0AE\uC74C": "bg-bg-green text-wedly-green",
 };
 
 const STATUS_BADGE: Record<string, string> = {
-  "시작 전": "bg-slate-100 text-slate-600",
-  "대기중": "bg-slate-100 text-slate-600",
-  "진행 중": "bg-blue-100 text-blue-700",
-  "완료": "bg-green-100 text-green-700",
+  "시작 전": "bg-bg-gray text-wedly-muted",
+  "대기중": "bg-bg-gray text-wedly-muted",
+  "진행 중": "bg-bg-blue text-wedly-accent",
+  "완료": "bg-bg-green text-wedly-green",
 };
 
 const CATEGORY_COLORS: Record<string, string> = {
-  "신규 기능": "bg-indigo-100 text-indigo-700",
-  "기능 개선": "bg-amber-100 text-amber-700",
-  "버그 수정": "bg-red-100 text-red-700",
-  "UI·UX": "bg-pink-100 text-pink-700",
-  "데이터": "bg-teal-100 text-teal-700",
-  "기타": "bg-slate-100 text-slate-600",
+  "신규 기능": "bg-bg-blue text-wedly-accent",
+  "기능 개선": "bg-bg-yellow text-wedly-gold",
+  "버그 수정": "bg-bg-red text-wedly-red",
+  "UI·UX": "bg-bg-purple text-wedly-purple",
+  "데이터": "bg-bg-green text-wedly-green",
+  "기타": "bg-bg-gray text-wedly-muted",
 };
 
 const CATEGORY_OPTIONS = ["신규 기능", "기능 개선", "버그 수정", "UI·UX", "데이터", "기타"];
@@ -274,7 +274,7 @@ function DevRequestContent() {
           </div>
 
           {submitResult && (
-            <div className={`px-3 py-2 rounded-lg text-[12px] font-medium mb-3 flex items-center justify-between ${submitResult.includes("\uC644\uB8CC") ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-600"}`}>
+            <div className={`px-3 py-2 rounded-lg text-[12px] font-medium mb-3 flex items-center justify-between ${submitResult.includes("\uC644\uB8CC") ? "bg-bg-green text-wedly-green" : "bg-bg-red text-wedly-red"}`}>
               <span>{submitResult}</span>
               {!submitResult.includes("\uC644\uB8CC") && (
                 <button onClick={() => setSubmitResult(null)} className="ml-2 text-[11px] underline opacity-70 hover:opacity-100">닫기</button>
@@ -297,7 +297,7 @@ function DevRequestContent() {
                     <span className="text-[12px] font-medium text-wedly-navy">요청 내용 입력</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-[11px] font-medium px-2 py-0.5 rounded bg-green-100 text-green-700">{appLabel}</span>
+                    <span className="text-[11px] font-medium px-2 py-0.5 rounded bg-bg-green text-wedly-green">{appLabel}</span>
                     {paramPage && <span className="text-[11px] text-wedly-muted">{paramPage}</span>}
                     {paramRequester && <span className="text-[11px] text-wedly-muted ml-auto">요청자: {paramRequester}</span>}
                   </div>
@@ -397,19 +397,19 @@ function DevRequestContent() {
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div className="bg-blue-50/60 rounded-lg border border-blue-200 p-4 min-h-[320px]">
+                    <div className="bg-bg-blue/60 rounded-lg border border-wedly-bd p-4 min-h-[320px]">
                       <div className="flex items-center gap-1.5 mb-2">
                         <svg className="w-3.5 h-3.5 text-wedly-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
                         <span className="text-[11px] font-semibold text-wedly-accent">미리보기</span>
                       </div>
                       <div className="text-[13px] text-wedly-t1 whitespace-pre-wrap leading-relaxed">{structuredContent}</div>
                     </div>
-                    <div className="bg-amber-50/60 rounded-lg border border-amber-200 p-4 min-h-[320px] flex flex-col">
+                    <div className="bg-bg-yellow/60 rounded-lg border border-wedly-bd p-4 min-h-[320px] flex flex-col">
                       <div className="flex items-center gap-1.5 mb-2">
-                        <svg className="w-3.5 h-3.5 text-amber-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
-                        <span className="text-[11px] font-semibold text-amber-600">직접 편집</span>
+                        <svg className="w-3.5 h-3.5 text-wedly-gold" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
+                        <span className="text-[11px] font-semibold text-wedly-gold">직접 편집</span>
                       </div>
-                      <textarea value={structuredContent} onChange={(e) => setStructuredContent(e.target.value)} className="w-full flex-1 px-3 py-2 text-[13px] border border-amber-200 bg-white rounded-lg resize-none focus:outline-none focus:border-amber-400 font-mono min-h-[270px]" />
+                      <textarea value={structuredContent} onChange={(e) => setStructuredContent(e.target.value)} className="w-full flex-1 px-3 py-2 text-[13px] border border-wedly-bd bg-white rounded-lg resize-none focus:outline-none focus:border-wedly-gold font-mono min-h-[270px]" />
                     </div>
                   </div>
 
@@ -477,7 +477,7 @@ function DevRequestContent() {
             <div className="overflow-x-auto rounded-lg border border-wedly-bd">
               <table className="w-full text-left">
                 <thead>
-                  <tr className="bg-slate-50 border-b border-wedly-bd text-[11px] font-semibold text-wedly-t2">
+                  <tr className="bg-bg-gray border-b border-wedly-bd text-[11px] font-semibold text-wedly-t2">
                     <th className="px-3 py-2.5 w-[50px] text-center">NO</th>
                     <th className="px-3 py-2.5">제목</th>
                     <th className="px-3 py-2.5 w-[80px] text-center">앱</th>
@@ -496,17 +496,17 @@ function DevRequestContent() {
                       <React.Fragment key={r.id}>
                         <tr
                           onClick={() => setExpandedId(isOpen ? null : r.id)}
-                          className={`border-b border-wedly-bd/50 cursor-pointer transition-colors ${isOpen ? "bg-blue-50/50" : "hover:bg-bg-gray/40"}`}
+                          className={`border-b border-wedly-bd/50 cursor-pointer transition-colors ${isOpen ? "bg-bg-blue/50" : "hover:bg-bg-gray/40"}`}
                         >
                           <td className="px-3 py-2.5 text-[11px] text-wedly-muted font-mono text-center">{r.no}</td>
                           <td className="px-3 py-2.5 text-[13px] font-semibold text-wedly-navy">
                             <div className="flex items-center gap-1.5">
-                              <svg className={`w-3 h-3 text-slate-400 shrink-0 transition-transform ${isOpen ? "rotate-90" : ""}`} viewBox="0 0 16 16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                              <svg className={`w-3 h-3 text-wedly-muted shrink-0 transition-transform ${isOpen ? "rotate-90" : ""}`} viewBox="0 0 16 16" fill="none"><path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
                               {r.title}
                             </div>
                           </td>
                           <td className="px-3 py-2.5 text-[11px] text-center">
-                            {r.app && <span className="font-medium px-1.5 py-0.5 rounded bg-blue-50 text-blue-600">{r.app.replace("wedly-", "")}</span>}
+                            {r.app && <span className="font-medium px-1.5 py-0.5 rounded bg-bg-blue text-wedly-accent">{r.app.replace("wedly-", "")}</span>}
                           </td>
                           <td className="px-3 py-2.5 text-[11px] text-wedly-t2 text-center">{r.requester}</td>
                           <td className="px-3 py-2.5 text-center">
@@ -522,11 +522,11 @@ function DevRequestContent() {
                           <td className="px-3 py-2.5 text-center">
                             {confirmDeleteId === r.id ? (
                               <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                                <button onClick={() => { handleDelete(r.id); setConfirmDeleteId(null); setExpandedId(null); }} className="text-[10px] font-medium text-white bg-red-500 px-1.5 py-0.5 rounded hover:bg-red-600">삭제</button>
-                                <button onClick={() => setConfirmDeleteId(null)} className="text-[10px] text-slate-400 px-1.5 py-0.5 border border-slate-200 rounded hover:bg-slate-50">취소</button>
+                                <button onClick={() => { handleDelete(r.id); setConfirmDeleteId(null); setExpandedId(null); }} className="text-[10px] font-medium text-white bg-wedly-red px-1.5 py-0.5 rounded hover:bg-wedly-red/90">삭제</button>
+                                <button onClick={() => setConfirmDeleteId(null)} className="text-[10px] text-wedly-muted px-1.5 py-0.5 border border-wedly-bd rounded hover:bg-bg-gray">취소</button>
                               </div>
                             ) : (
-                              <button onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(r.id); }} className="text-slate-300 hover:text-red-400 transition-colors">
+                              <button onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(r.id); }} className="text-wedly-muted hover:text-wedly-red transition-colors">
                                 <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14" strokeLinecap="round" strokeLinejoin="round" /></svg>
                               </button>
                             )}
@@ -535,23 +535,23 @@ function DevRequestContent() {
                         {isOpen && (
                           <tr>
                             <td colSpan={9} className="p-0">
-                              <div className="bg-blue-50/40 border-b border-blue-200 px-5 py-4">
+                              <div className="bg-bg-blue/40 border-b border-wedly-bd px-5 py-4">
                                 <div className="flex items-center justify-between mb-3">
                                   <div className="flex items-center gap-2">
-                                    {r.category && <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${CATEGORY_COLORS[r.category] || "bg-slate-100 text-slate-600"}`}>{r.category}</span>}
-                                    <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${PRIORITY_COLORS[r.priority] || "bg-slate-100 text-slate-600"}`}>{r.priority}</span>
-                                    <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${STATUS_BADGE[r.status] || "bg-slate-100 text-slate-600"}`}>{r.status}</span>
+                                    {r.category && <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${CATEGORY_COLORS[r.category] || "bg-bg-gray text-wedly-muted"}`}>{r.category}</span>}
+                                    <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${PRIORITY_COLORS[r.priority] || "bg-bg-gray text-wedly-muted"}`}>{r.priority}</span>
+                                    <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${STATUS_BADGE[r.status] || "bg-bg-gray text-wedly-muted"}`}>{r.status}</span>
                                     <span className="text-[11px] text-wedly-muted">{r.requester} · {new Date(r.createdTime).toLocaleDateString("ko-KR")}</span>
                                   </div>
                                   <button
                                     onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(`${r.title}\n\n${r.content}`); setCopied(true); setTimeout(() => setCopied(false), 2000); }}
-                                    className="flex items-center gap-1 text-[11px] text-slate-400 hover:text-wedly-accent transition-colors"
+                                    className="flex items-center gap-1 text-[11px] text-wedly-muted hover:text-wedly-accent transition-colors"
                                   >
                                     <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" /></svg>
                                     {copied ? "\uBCF5\uC0AC\uB428" : "\uBCF5\uC0AC"}
                                   </button>
                                 </div>
-                                <div className="bg-white rounded-lg border border-blue-100 p-5 space-y-0.5">
+                                <div className="bg-white rounded-lg border border-wedly-bd p-5 space-y-0.5">
                                   <h3 className="text-[15px] font-bold text-wedly-navy mb-2">{r.title}</h3>
                                   {r.content && (() => {
                                     return r.content.split("\n").map((line: string, i: number) => {
@@ -564,7 +564,7 @@ function DevRequestContent() {
                                       }
                                       if (/^\d+\./.test(trimmed)) return <p key={i} className="text-[13px] text-wedly-t1 leading-[1.7] pl-1">{trimmed}</p>;
                                       if (trimmed.startsWith("- ")) return <p key={i} className="text-[13px] text-wedly-t2 leading-[1.7] pl-4">{trimmed}</p>;
-                                      if (trimmed === "---") return <hr key={i} className="my-2 border-slate-200" />;
+                                      if (trimmed === "---") return <hr key={i} className="my-2 border-wedly-bd" />;
                                       return <p key={i} className="text-[13px] text-wedly-t1 leading-[1.7]">{trimmed}</p>;
                                     });
                                   })()}
@@ -605,19 +605,19 @@ function InlineSelect({ value, options, colors, onChange }: {
     <div ref={ref} className="relative inline-block">
       <button
         onClick={(e) => { e.stopPropagation(); setOpen(!open); }}
-        className={`text-[10px] font-medium px-1.5 py-0.5 rounded cursor-pointer hover:ring-1 hover:ring-slate-300 transition-all ${colors[value] || "bg-slate-100 text-slate-600"}`}
+        className={`text-[10px] font-medium px-1.5 py-0.5 rounded cursor-pointer hover:ring-1 hover:ring-wedly-bd transition-all ${colors[value] || "bg-bg-gray text-wedly-muted"}`}
       >
         {value || "—"}
       </button>
       {open && (
-        <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 z-50 bg-white border border-slate-200 rounded-lg shadow-lg py-1 min-w-[120px]">
+        <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 z-50 bg-white border border-wedly-bd rounded-lg shadow-lg py-1 min-w-[120px]">
           {options.map((opt) => (
             <button
               key={opt}
               onClick={(e) => { e.stopPropagation(); onChange(opt); setOpen(false); }}
-              className={`w-full text-left px-3 py-1.5 text-[11px] hover:bg-slate-50 transition-colors flex items-center gap-2 ${value === opt ? "font-semibold" : ""}`}
+              className={`w-full text-left px-3 py-1.5 text-[11px] hover:bg-bg-gray transition-colors flex items-center gap-2 ${value === opt ? "font-semibold" : ""}`}
             >
-              <span className={`inline-block w-2 h-2 rounded-full ${(colors[opt] || "bg-slate-100").split(" ")[0]}`} />
+              <span className={`inline-block w-2 h-2 rounded-full ${(colors[opt] || "bg-bg-gray").split(" ")[0]}`} />
               {opt}
             </button>
           ))}
