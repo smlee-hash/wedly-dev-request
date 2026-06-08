@@ -19,7 +19,7 @@ export async function POST(req: Request) {
   }
 
   try {
-    const client = new Anthropic({ apiKey, maxRetries: 3, timeout: 30000 });
+    const client = new Anthropic({ apiKey, maxRetries: 3, timeout: 50000 });
 
     const prompt = `사용자가 앱의 오류/개선 요청을 입력했습니다. 이것을 개발자가 바로 이해하고 작업할 수 있는 구조화된 요청서로 변환하고, 우선순위를 자동으로 판단해주세요.
 
@@ -63,15 +63,25 @@ export async function POST(req: Request) {
 
     const message = await client.messages.create({
       model: "claude-haiku-4-5-20251001",
-      max_tokens: 1000,
+      max_tokens: 2000,
       messages: [{ role: "user", content: prompt }],
     });
 
-    const raw = (message.content[0] as { type: string; text: string }).text;
+    // 응답 첫 블록이 비어있거나 text가 아닐 때 옛 코드는 .text 접근에서 그대로 터졌다 → 가드
+    const block = message.content[0] as { type?: string; text?: string } | undefined;
+    const raw = block && block.type === "text" && block.text ? block.text : "";
+    if (!raw) {
+      console.error(
+        "[dev-request/structure] AI 응답에 텍스트가 없음:",
+        JSON.stringify({ stop_reason: message.stop_reason, content: message.content }).slice(0, 500)
+      );
+      return NextResponse.json({ success: false, error: "AI 응답이 비어 있습니다. 다시 시도해주세요." }, { status: 502 });
+    }
 
     const jsonMatch = raw.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
-      return NextResponse.json({ success: false, error: "AI 응답 파싱 실패" }, { status: 500 });
+      console.error("[dev-request/structure] JSON 형태를 못 찾음. raw 앞부분:", raw.slice(0, 300));
+      return NextResponse.json({ success: false, error: "AI 응답 파싱 실패. 다시 시도해주세요." }, { status: 502 });
     }
 
     let parsed: { title?: string; content?: string; priority?: string };
@@ -98,7 +108,14 @@ export async function POST(req: Request) {
       },
     });
   } catch (err: unknown) {
-    const status = (err as { status?: number }).status;
+    const e = err as { status?: number; name?: string; message?: string };
+    // 옛 코드는 여기서 원인을 한 줄도 안 남겨 재발 시 진단이 불가능했다 → 항상 기록
+    console.error("[dev-request/structure] 구조화 실패:", {
+      status: e?.status,
+      name: e?.name,
+      message: e?.message,
+    });
+    const status = e?.status;
     if (status === 529 || status === 503) {
       return NextResponse.json({ success: false, error: "AI 서버가 일시적으로 바쁩니다. 잠시 후 다시 시도해주세요." }, { status: 503 });
     }
@@ -107,6 +124,14 @@ export async function POST(req: Request) {
     }
     if (status === 401) {
       return NextResponse.json({ success: false, error: "API 인증 오류. 관리자에게 문의하세요." }, { status: 500 });
+    }
+    // status 없는 연결/타임아웃 오류 — 사용자 오류 보고의 가장 유력한 일시적 원인
+    const isConnIssue =
+      e?.name === "APIConnectionTimeoutError" ||
+      e?.name === "APIConnectionError" ||
+      /timeout|timed out|fetch failed|ECONN|network/i.test(e?.message || "");
+    if (isConnIssue) {
+      return NextResponse.json({ success: false, error: "AI 응답이 지연되어 실패했습니다. 잠시 후 다시 시도해주세요." }, { status: 504 });
     }
     return NextResponse.json({ success: false, error: "요청서 생성 중 오류가 발생했습니다. 다시 시도해주세요." }, { status: 500 });
   }
