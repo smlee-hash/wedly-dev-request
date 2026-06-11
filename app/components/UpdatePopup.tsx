@@ -153,7 +153,7 @@ export default function UpdatePopup({ page }: { page?: string }) {
             </div>
             <button
               onClick={dismiss}
-              className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
+              className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-bg-gray text-wedly-muted hover:text-wedly-t2 transition-colors"
             >
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                 <path d="M1 1L13 13M1 13L13 1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
