@@ -133,6 +133,10 @@ export async function POST(req: Request) {
     if (isConnIssue) {
       return NextResponse.json({ success: false, error: "AI 응답이 지연되어 실패했습니다. 잠시 후 다시 시도해주세요." }, { status: 504 });
     }
+    // 결제 잔액 부족 등 재시도해도 풀리지 않는 400 — "다시 시도" 대신 솔직히 안내(프런트가 '바로 등록'으로 유도)
+    if (status === 400 && /credit balance|billing|insufficient|too low/i.test(e?.message || "")) {
+      return NextResponse.json({ success: false, error: "AI 정리 기능을 지금 사용할 수 없습니다." }, { status: 402 });
+    }
     return NextResponse.json({ success: false, error: "요청서 생성 중 오류가 발생했습니다. 다시 시도해주세요." }, { status: 500 });
   }
 }
