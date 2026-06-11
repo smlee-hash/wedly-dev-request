@@ -145,14 +145,13 @@ function DevRequestContent() {
         setStep("review");
       } else {
         setStep("input");
-        setSubmitResult((json.error || "AI \uC815\uB9AC\uC5D0 \uC2E4\uD328\uD588\uC5B4\uC694.") + " \uC544\uB798 '\uBC14\uB85C \uB4F1\uB85D'\uC744 \uB204\uB974\uBA74 \uC791\uC131\uD558\uC2E0 \uB0B4\uC6A9 \uADF8\uB300\uB85C \uC811\uC218\uB3FC\uC694.");
+        setSubmitResult(json.error || "AI \uC815\uB9AC\uC5D0 \uC2E4\uD328\uD588\uC5B4\uC694. \uC7A0\uC2DC \uD6C4 \uB2E4\uC2DC \uC2DC\uB3C4\uD574\uC8FC\uC138\uC694.");
       }
     } catch (e) {
       setStep("input");
-      const aiFailMsg = (e as Error).name === "AbortError"
-        ? "AI \uC815\uB9AC \uC2DC\uAC04\uC774 \uCD08\uACFC\uB410\uC5B4\uC694."
-        : "AI \uC815\uB9AC \uC911 \uC624\uB958\uAC00 \uB0AC\uC5B4\uC694.";
-      setSubmitResult(aiFailMsg + " \uC544\uB798 '\uBC14\uB85C \uB4F1\uB85D'\uC744 \uB204\uB974\uBA74 \uC791\uC131\uD558\uC2E0 \uB0B4\uC6A9 \uADF8\uB300\uB85C \uC811\uC218\uB3FC\uC694.");
+      setSubmitResult((e as Error).name === "AbortError"
+        ? "AI \uC815\uB9AC \uC751\uB2F5\uC774 \uB108\uBB34 \uB2A6\uC5B4 \uB04A\uACBC\uC5B4\uC694. \uC7A0\uC2DC \uD6C4 \uB2E4\uC2DC \uC2DC\uB3C4\uD574\uC8FC\uC138\uC694."
+        : "AI \uC815\uB9AC \uC694\uCCAD \uC911 \uB124\uD2B8\uC6CC\uD06C \uC624\uB958\uAC00 \uB0AC\uC5B4\uC694. \uC7A0\uC2DC \uD6C4 \uB2E4\uC2DC \uC2DC\uB3C4\uD574\uC8FC\uC138\uC694.");
     }
   };
 
