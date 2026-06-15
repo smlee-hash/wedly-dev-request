@@ -155,8 +155,17 @@ export async function POST(req: Request) {
   }
 
   const requesterName = requester || "";
-  const url = new URL(req.url);
-  const baseUrl = `${url.protocol}//${url.host}`;
+  // 노션에 박는 이미지/파일 주소의 공개 베이스 URL.
+  // req.url 만 쓰면 Railway 내부 포트(localhost:8080)가 박혀 노션에서 이미지가 안 열린다.
+  // 우선순위: 명시 env → 프록시가 넘긴 공개 호스트(Railway가 x-forwarded-* 세팅, ERP email.ts 와 동일 검증된 방식) → req.url 폴백.
+  const envBase = process.env.PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_BASE_URL;
+  const fwdHost = req.headers.get("x-forwarded-host");
+  const fwdProto = req.headers.get("x-forwarded-proto") || "https";
+  const baseUrl = envBase
+    ? envBase.replace(/\/+$/, "")
+    : fwdHost
+      ? `${fwdProto}://${fwdHost}`
+      : `${new URL(req.url).protocol}//${new URL(req.url).host}`;
 
   try {
     await ensureDatabaseProperties();
