@@ -15,6 +15,30 @@
 //
 // 순수 함수(전역 접근 없이 입력만 받음) — 단위 테스트가 쉽다.
 
+// 노션 image 블록은 URL이 이미지 확장자(.png/.jpg ...)로 "끝나야" 이미지로 인정한다(확장자 없으면 거부).
+// devRequestImage 의 mimeType → 붙일 확장자. 서빙(/api/images/[id])은 이 확장자를 떼고 id 로 조회한다.
+const MIME_TO_EXT: Record<string, string> = {
+  "image/png": "png",
+  "image/jpeg": "jpg",
+  "image/jpg": "jpg",
+  "image/gif": "gif",
+  "image/webp": "webp",
+  "image/bmp": "bmp",
+  "image/heic": "heic",
+  "image/heif": "heif",
+  "image/tiff": "tiff",
+};
+/** mimeType → 노션이 인정하는 이미지 확장자. 이미지가 아니거나 모르면 "png"(노션이 콘텐츠 타입으로 렌더). */
+export function imageExtForMime(mime: string | null | undefined): string {
+  const m = (mime || "").toLowerCase().trim();
+  return MIME_TO_EXT[m] || "png";
+}
+
+/** 경로 끝의 이미지 확장자를 떼어 실제 저장 id 를 돌려준다. 확장자 없으면 그대로. */
+export function stripImageExt(idOrName: string): string {
+  return (idOrName || "").replace(/\.(png|jpe?g|gif|webp|bmp|heic|heif|tiff?|svg|ico)$/i, "");
+}
+
 /** 값이 내부/사설 주소(노션이 못 가져오는 주소)면 true. 호스트 단독 또는 전체 URL 모두 판정. */
 export function isInternalHost(value: string | null | undefined): boolean {
   if (!value) return true;

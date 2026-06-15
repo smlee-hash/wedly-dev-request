@@ -1,13 +1,16 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { stripImageExt } from "@/lib/public-base-url";
 
 export async function GET(
   _req: Request,
   { params }: { params: { id: string } }
 ) {
   try {
+    // 노션 호환을 위해 URL 끝에 .png 등 확장자를 붙이므로, 조회 전에 확장자를 떼어 실제 id 로 찾는다.
+    const id = stripImageExt(params.id);
     const image = await prisma.devRequestImage.findUnique({
-      where: { id: params.id },
+      where: { id },
     });
 
     if (!image) {

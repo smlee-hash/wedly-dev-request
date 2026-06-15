@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { resolvePublicBaseUrl, isInternalHost } from "@/lib/public-base-url";
+import { prisma } from "@/lib/prisma";
+import { resolvePublicBaseUrl, isInternalHost, imageExtForMime } from "@/lib/public-base-url";
 
 const NOTION_TOKEN = process.env.NOTION_TOKEN;
 const NOTION_API = "https://api.notion.com/v1";
@@ -219,11 +220,21 @@ export async function POST(req: Request) {
     }
 
     if (hasImages) {
+      // 노션 image 블록은 URL이 이미지 확장자로 끝나야 인정한다 → 사진 종류(mimeType)를 조회해 확장자를 붙인다.
+      let extById = new Map<string, string>();
+      try {
+        const recs = await prisma.devRequestImage.findMany({
+          where: { id: { in: imageIds as string[] } },
+          select: { id: true, mimeType: true },
+        });
+        extById = new Map(recs.map((r) => [r.id, imageExtForMime(r.mimeType)]));
+      } catch { /* 조회 실패 시 기본 png 로 폴백 */ }
       for (const id of imageIds) {
+        const ext = extById.get(id) || "png";
         children.push({
           object: "block",
           type: "image",
-          image: { type: "external", external: { url: `${baseUrl}/api/images/${id}` } },
+          image: { type: "external", external: { url: `${baseUrl}/api/images/${id}.${ext}` } },
         });
       }
     }

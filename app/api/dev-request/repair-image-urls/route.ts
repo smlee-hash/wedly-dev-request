@@ -9,7 +9,8 @@
 //   - 기본은 미리보기(dry-run). 실제 수정은 ?apply=1 이 있어야 동작.
 //   - /api/images/ 경로 + 내부주소인 것만 대상. 그 외 주소·블록은 절대 안 건드림.
 import { NextResponse } from "next/server";
-import { resolvePublicBaseUrl, isInternalHost } from "@/lib/public-base-url";
+import { prisma } from "@/lib/prisma";
+import { resolvePublicBaseUrl, isInternalHost, imageExtForMime, stripImageExt } from "@/lib/public-base-url";
 
 const NOTION_TOKEN = process.env.NOTION_TOKEN;
 const NOTION_API = "https://api.notion.com/v1";
@@ -39,13 +40,37 @@ async function notion(pathname: string, init?: RequestInit, retries = 3): Promis
   }
 }
 
-// 내부주소 이미지/파일 URL → 공개주소. path(/api/images/{id})는 그대로 유지. 바꿀 필요 없으면 null.
-function fixUrl(url: string, base: string): string | null {
+const IMG_EXT_RE = /\.(png|jpe?g|gif|webp|bmp|heic|heif|tiff?)$/i;
+
+// 하이퍼링크(파일 첨부)용: 내부주소 → 공개주소만 교정(확장자 불필요). 바꿀 필요 없으면 null.
+function fixLinkUrl(url: string, base: string): string | null {
   try {
     const u = new URL(url);
-    if (!u.pathname.startsWith("/api/images/")) return null; // 우리 이미지 경로만
+    if (!u.pathname.startsWith("/api/images/")) return null;
     if (!isInternalHost(`${u.protocol}//${u.host}`) && !isInternalHost(u.host)) return null; // 이미 공개주소면 패스
     const next = `${base}${u.pathname}${u.search}`;
+    return next !== url ? next : null;
+  } catch {
+    return null;
+  }
+}
+
+// 이미지 블록용: (내부주소 또는 확장자 없음)이면 공개주소 + 이미지 확장자로 교정. 바꿀 필요 없으면 null.
+async function fixImageUrl(url: string, base: string): Promise<string | null> {
+  try {
+    const u = new URL(url);
+    if (!u.pathname.startsWith("/api/images/")) return null;
+    const internal = isInternalHost(`${u.protocol}//${u.host}`) || isInternalHost(u.host);
+    const hasExt = IMG_EXT_RE.test(u.pathname);
+    if (!internal && hasExt) return null; // 이미 공개주소 + 확장자 → OK
+    const id = stripImageExt(u.pathname.replace("/api/images/", ""));
+    if (!id) return null;
+    let ext = "png";
+    try {
+      const rec = await prisma.devRequestImage.findUnique({ where: { id }, select: { mimeType: true } });
+      ext = imageExtForMime(rec?.mimeType);
+    } catch { /* 기본 png */ }
+    const next = `${base}/api/images/${id}.${ext}`;
     return next !== url ? next : null;
   } catch {
     return null;
@@ -97,10 +122,10 @@ export async function POST(req: Request) {
           if (bData.object === "error") { errors.push(`blocks ${page.id}: ${bData.message}`); break; }
 
           for (const block of bData.results || []) {
-            // 1) 이미지 블록
+            // 1) 이미지 블록 — 내부주소 또는 확장자 없음 → 공개주소 + 이미지 확장자
             if (block.type === "image" && block.image?.type === "external") {
               const old = block.image.external?.url || "";
-              const next = fixUrl(old, base);
+              const next = await fixImageUrl(old, base);
               if (next) {
                 if (samples.length < 6) samples.push(`IMG ${old} → ${next}`);
                 if (!dryRun) {
@@ -117,7 +142,7 @@ export async function POST(req: Request) {
                 const txt = t.text as { content?: string; link?: { url?: string } } | undefined;
                 const linkUrl = txt?.link?.url;
                 if (t.type === "text" && linkUrl) {
-                  const next = fixUrl(linkUrl, base);
+                  const next = fixLinkUrl(linkUrl, base);
                   if (next) {
                     changed = true;
                     if (samples.length < 6) samples.push(`LINK ${linkUrl} → ${next}`);

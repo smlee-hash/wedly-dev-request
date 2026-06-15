@@ -1,6 +1,6 @@
 // 단위 테스트 — `npx tsx lib/public-base-url.test.ts` 로 실행.
 // 핵심 보장: 어떤 경우에도 노션에 박는 공개 주소에 localhost(내부주소)가 들어가지 않는다.
-import { resolvePublicBaseUrl, isInternalHost } from "./public-base-url";
+import { resolvePublicBaseUrl, isInternalHost, imageExtForMime, stripImageExt } from "./public-base-url";
 
 let pass = 0;
 let fail = 0;
@@ -41,6 +41,20 @@ eq("all internal → reqUrl fallback", resolvePublicBaseUrl({ forwardedHost: "lo
 
 // 6) ★핵심 회귀 시나리오: env 없음 + RAILWAY 있음 + req.url 이 localhost → 절대 localhost 안 박힘
 eq("NO.48 regression guard", resolvePublicBaseUrl({ envBase: null, railwayPublicDomain: "wedly-dev-request-production.up.railway.app", forwardedHost: null, forwardedProto: null, reqUrl: "https://localhost:8080/api/dev-request" }).includes("localhost"), false);
+
+// imageExtForMime — 노션이 이미지로 인정하려면 확장자가 필요
+eq("ext png", imageExtForMime("image/png"), "png");
+eq("ext jpeg→jpg", imageExtForMime("image/jpeg"), "jpg");
+eq("ext webp", imageExtForMime("image/webp"), "webp");
+eq("ext heic", imageExtForMime("image/heic"), "heic");
+eq("ext unknown→png", imageExtForMime("application/octet-stream"), "png");
+eq("ext null→png", imageExtForMime(null), "png");
+
+// stripImageExt — 서빙 시 확장자 떼고 id 조회
+eq("strip .png", stripImageExt("cmqejp7rm0002b4nzc8u02jps.png"), "cmqejp7rm0002b4nzc8u02jps");
+eq("strip .jpg", stripImageExt("abc123.jpg"), "abc123");
+eq("strip none (확장자 없으면 그대로)", stripImageExt("cmqejp7rm0002b4nzc8u02jps"), "cmqejp7rm0002b4nzc8u02jps");
+eq("strip cuid 내부 점 없음 보존", stripImageExt("cm.weird"), "cm.weird"); // .weird 는 이미지확장자 아님 → 보존
 
 console.log(`\n${pass} passed, ${fail} failed`);
 if (fail > 0) process.exit(1);
