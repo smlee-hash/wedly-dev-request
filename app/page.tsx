@@ -95,14 +95,15 @@ function DevRequestContent() {
     });
   }, []);
 
-  const uploadFiles = async (): Promise<{ id: string; name: string; mimeType: string }[]> => {
-    if (attachedFiles.length === 0) return [];
+  const uploadFiles = async (): Promise<{ files: { id: string; name: string; mimeType: string }[]; skipped: { name: string; reason: string }[] }> => {
+    if (attachedFiles.length === 0) return { files: [], skipped: [] };
     const formData = new FormData();
     for (const { file } of attachedFiles) formData.append("images", file);
     const res = await fetch("/api/dev-request/upload", { method: "POST", body: formData });
     const json = await res.json();
-    if (!json.success) throw new Error(json.error);
-    return json.data;
+    // 서버가 정직하게 판정 — 하나도 못 올렸으면 success:false + 사유. 일부만 제외되면 skipped 동반.
+    if (!json.success) throw new Error(json.error || "파일 업로드에 실패했어요.");
+    return { files: json.data || [], skipped: json.skipped || [] };
   };
 
   const fetchRequests = useCallback(async () => {
@@ -175,11 +176,16 @@ function DevRequestContent() {
     setSubmitResult(null);
     try {
       let uploadedFiles: { id: string; name: string; mimeType: string }[] = [];
+      let skippedNote = "";
       if (attachedFiles.length > 0) {
         try {
-          uploadedFiles = await uploadFiles();
-        } catch {
-          setSubmitResult("파일 업로드에 실패했습니다. 첨부를 제거 후 다시 시도해주세요.");
+          const up = await uploadFiles();
+          uploadedFiles = up.files;
+          if (up.skipped.length > 0) {
+            skippedNote = ` (단, ${up.skipped.length}개 파일은 제외됨: ${up.skipped.map((s) => `${s.name} — ${s.reason}`).join(", ")})`;
+          }
+        } catch (e) {
+          setSubmitResult((e as Error).message || "파일 업로드에 실패했습니다. 첨부를 제거 후 다시 시도해주세요.");
           setSubmitting(false);
           return;
         }
@@ -202,7 +208,7 @@ function DevRequestContent() {
       });
       const json = await res.json();
       if (json.success) {
-        setSubmitResult("\uB4F1\uB85D \uC644\uB8CC");
+        setSubmitResult("\uB4F1\uB85D \uC644\uB8CC" + skippedNote);
         setRawContent(""); setStructuredTitle(""); setStructuredContent(""); setPriority("보통"); setCategory("기타");
         attachedFiles.forEach((f) => URL.revokeObjectURL(f.preview));
         setAttachedFiles([]);

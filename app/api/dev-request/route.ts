@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { resolvePublicBaseUrl, isInternalHost } from "@/lib/public-base-url";
 
 const NOTION_TOKEN = process.env.NOTION_TOKEN;
 const NOTION_API = "https://api.notion.com/v1";
@@ -155,17 +156,20 @@ export async function POST(req: Request) {
   }
 
   const requesterName = requester || "";
-  // 노션에 박는 이미지/파일 주소의 공개 베이스 URL.
-  // req.url 만 쓰면 Railway 내부 포트(localhost:8080)가 박혀 노션에서 이미지가 안 열린다.
-  // 우선순위: 명시 env → 프록시가 넘긴 공개 호스트(Railway가 x-forwarded-* 세팅, ERP email.ts 와 동일 검증된 방식) → req.url 폴백.
-  const envBase = process.env.PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_BASE_URL;
-  const fwdHost = req.headers.get("x-forwarded-host");
-  const fwdProto = req.headers.get("x-forwarded-proto") || "https";
-  const baseUrl = envBase
-    ? envBase.replace(/\/+$/, "")
-    : fwdHost
-      ? `${fwdProto}://${fwdHost}`
-      : `${new URL(req.url).protocol}//${new URL(req.url).host}`;
+  // 노션에 박는 이미지/파일 주소의 공개 베이스 URL — 절대 localhost(내부주소)가 들어가면 안 된다(NO.48).
+  // 예전엔 req.url 호스트(Railway 내부 localhost:8080)가 박혀 노션에서 이미지가 깨졌다.
+  // RAILWAY_PUBLIC_DOMAIN(헤더 무관·항상 정확)을 우선 신뢰하고 모든 후보에서 내부주소는 건너뛴다(헬퍼 단위테스트로 보장).
+  const baseUrl = resolvePublicBaseUrl({
+    envBase: process.env.PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_BASE_URL,
+    railwayPublicDomain: process.env.RAILWAY_PUBLIC_DOMAIN,
+    forwardedHost: req.headers.get("x-forwarded-host"),
+    forwardedProto: req.headers.get("x-forwarded-proto"),
+    reqUrl: req.url,
+  });
+  // 그래도 공개 주소를 못 구했으면(전부 내부주소) 로그로 남긴다 — 노션 이미지 깨짐을 운영로그에서 추적 가능.
+  if (!baseUrl || isInternalHost(baseUrl)) {
+    console.warn(`[dev-request] 공개 baseUrl 미확보 — 노션 이미지가 깨질 수 있음. baseUrl="${baseUrl}" RAILWAY_PUBLIC_DOMAIN=${process.env.RAILWAY_PUBLIC_DOMAIN || "(unset)"}`);
+  }
 
   try {
     await ensureDatabaseProperties();
