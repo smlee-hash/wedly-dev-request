@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { isAllowedUploadFile } from "@/lib/upload-allow";
 
 const MAX_FILES = 5;
 const MAX_SIZE = 10 * 1024 * 1024; // 10MB per file (폰 사진 여유 — 예전 5MB는 카메라 사진이 자주 초과해 조용히 버려졌음)
@@ -17,15 +18,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: `최대 ${MAX_FILES}개까지 첨부 가능합니다` }, { status: 400 });
     }
 
-    const ALLOWED_TYPES = ["image/", "application/pdf", "application/vnd.openxmlformats-officedocument", "application/vnd.ms-", "application/msword", "application/haansofthwp", "application/x-hwp"];
-    const isAllowed = (t: string) => ALLOWED_TYPES.some((a) => t.startsWith(a));
-
+    // 허용 규칙은 프론트(page.tsx)와 동일한 공용 헬퍼 한 곳에서 판정한다(NO.63 통일).
+    // 파일명도 함께 넘겨 zip 처럼 브라우저가 MIME 을 비워두는 경우 확장자로 보강 판정한다.
     const results = [];
     // 건너뛴 파일을 모아 정직하게 알린다 — 예전엔 조용히 버려(continue) 사용자가 "올라간 줄" 알았음(사진 누락).
     const skipped: { name: string; reason: string }[] = [];
     for (const file of files) {
       const name = file.name || "파일";
-      if (!isAllowed(file.type)) {
+      if (!isAllowedUploadFile(file.name, file.type)) {
         skipped.push({ name, reason: `지원하지 않는 형식(${file.type || "알 수 없음"})` });
         continue;
       }

@@ -241,13 +241,15 @@ export async function POST(req: Request) {
 
     if (hasFiles) {
       for (const f of fileIds as { id: string; name: string }[]) {
+        // 원래 파일명을 ?name= 으로 함께 실어 보낸다 → 노션 링크 클릭 시 zip 등이 확장자와 함께 내려받아져 바로 열린다.
+        const fileUrl = `${baseUrl}/api/images/${f.id}?name=${encodeURIComponent(f.name || "")}`;
         children.push({
           object: "block",
           type: "paragraph",
           paragraph: {
             rich_text: [{
               type: "text",
-              text: { content: `📎 ${f.name}`, link: { url: `${baseUrl}/api/images/${f.id}` } },
+              text: { content: `📎 ${f.name}`, link: { url: fileUrl } },
             }],
           },
         });

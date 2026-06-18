@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { stripImageExt } from "@/lib/public-base-url";
+import { buildContentDisposition } from "@/lib/upload-allow";
 
 export async function GET(
-  _req: Request,
+  req: Request,
   { params }: { params: { id: string } }
 ) {
   try {
@@ -24,7 +25,10 @@ export async function GET(
       "Cache-Control": "public, max-age=31536000, immutable",
     };
     if (!image.mimeType.startsWith("image/")) {
-      headers["Content-Disposition"] = `attachment; filename="${image.id}"`;
+      // 다운로드 파일명 — 노션 링크에 담아 보낸 원래 이름(?name=)을 살려 zip 등이 확장자와 함께 저장되게 한다.
+      // 없으면(옛 링크) 기존처럼 내부 id 로 폴백 → 회귀 없음.
+      const rawName = new URL(req.url).searchParams.get("name");
+      headers["Content-Disposition"] = buildContentDisposition(rawName, image.id);
     }
 
     return new NextResponse(buffer, { headers });

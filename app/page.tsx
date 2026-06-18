@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import UpdatePopup from "./components/UpdatePopup";
+import { isAllowedUploadFile, UPLOAD_ACCEPT_ATTR, UPLOAD_HINT_TEXT } from "@/lib/upload-allow";
 
 type DevRequest = {
   id: string;
@@ -75,8 +76,8 @@ function DevRequestContent() {
   const [dragging, setDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const ALLOWED_TYPES = ["image/", "application/pdf", "application/vnd.openxmlformats-officedocument", "application/vnd.ms-", "application/msword", "application/haansofthwp", "application/x-hwp"];
-  const isAllowedFile = (f: File) => ALLOWED_TYPES.some((t) => f.type.startsWith(t)) || /\.(docx?|xlsx?|pdf|hwp|pptx?)$/i.test(f.name);
+  // 첨부 허용 규칙은 서버(upload/route)와 동일한 공용 헬퍼 한 곳에서 판정한다(NO.63 통일).
+  const isAllowedFile = (f: File) => isAllowedUploadFile(f.name, f.type);
 
   const addFiles = useCallback((files: FileList | File[]) => {
     const newFiles = Array.from(files)
@@ -336,12 +337,12 @@ function DevRequestContent() {
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <input ref={fileInputRef} type="file" accept="image/*,.doc,.docx,.pdf,.xls,.xlsx,.hwp,.pptx" multiple className="hidden" onChange={(e) => { if (e.target.files) addFiles(e.target.files); e.target.value = ""; }} />
+                    <input ref={fileInputRef} type="file" accept={UPLOAD_ACCEPT_ATTR} multiple className="hidden" onChange={(e) => { if (e.target.files) addFiles(e.target.files); e.target.value = ""; }} />
                     <button type="button" onClick={() => fileInputRef.current?.click()} className="flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-medium text-wedly-t2 border border-wedly-bd rounded-lg hover:bg-bg-gray transition-colors">
                       <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" /></svg>
                       파일 첨부
                     </button>
-                    <span className="text-[11px] text-wedly-muted">이미지·문서(docx, pdf, xlsx, hwp) 첨부 가능 (최대 5MB)</span>
+                    <span className="text-[11px] text-wedly-muted">{UPLOAD_HINT_TEXT}</span>
                   </div>
 
                   {attachedFiles.length > 0 && (
